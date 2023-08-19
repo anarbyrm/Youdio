@@ -30,6 +30,8 @@ class YouTubeService:
             request = youtube.search()
         elif request_type == RequestType.PLAYLISTS:
             request = youtube.playlists()
+        elif request_type == RequestType.PLAYLIST_ITEMS:
+            request = youtube.playlistItems()
         return request.list(**kwargs)
 
     def get_channels_data(self, username: str) -> str:
@@ -67,7 +69,7 @@ class YouTubeService:
 
                 searcher = self.initiate_list_request(
                     RequestType.PLAYLISTS,
-                    part="snippet,status,contentDetails",
+                    part="snippet,status,contentDetails,id",
                     channelId=channel_id,
                     maxResults=limit,
                     **pagination
@@ -96,21 +98,74 @@ class YouTubeService:
 
         for data in data_list:
             snippet = data.pop("snippet")
-            thumbnails = snippet.pop("thumbnails")
-            default_thumbnail = thumbnails.get("default")
+            thumbnail = snippet.pop("thumbnails", {}).get("high")
             status = data.pop("status", None)
             content_count_data = data.pop("contentDetails", None)
+            statistics = data.pop("statistics", None)
+            player = data.pop("player", None)
 
             # dictionary modification
+            default_audio_language = snippet.pop("defaultAudioLanguage", None)
+            if default_audio_language:
+                data["default_audio_language"] = default_audio_language
+
             data.update(snippet)
-            data["thumbnail_url"] = default_thumbnail["url"]
+            data["thumbnail_url"] = thumbnail["url"]
 
             if status:
                 data["status"] = status["privacyStatus"]
 
             if content_count_data:
-                data["item_count"] = content_count_data["itemCount"]
+                item_count = content_count_data.get("itemCount")
+                if item_count:
+                    data["item_count"] = item_count
+
+                video_id = content_count_data.get("videoId")
+                if video_id:
+                    data["video_id"] = video_id
+
+            if statistics:
+                data.update({
+                    "view_count": statistics.get("viewCount"),
+                    "like_count": statistics.get("likeCount"),
+                    "comment_count": statistics.get("commentCount")
+                })
+
+            if player:
+                data["video_url"] = self.get_video_url(player.get("embedHtml"))
 
             result.append(data)
 
         return result
+
+    def get_playlist_videos(self, playlist_id: str) -> List[Dict[str, Any]]:
+        searcher = self.initiate_list_request(
+            RequestType.PLAYLIST_ITEMS,
+            part="snippet,contentDetails",
+            maxResults=50,
+            playlistId=playlist_id
+        )
+        playlist_items = searcher.execute()
+        prepared_playlist_items = self.prepare_data(playlist_items["items"])
+        return prepared_playlist_items
+
+    def get_video_detail(self, video_id: str) -> List[Dict[str, Any]]:
+        url = urljoin(YOUTUBE_API_BASE_URL, "videos")
+        params = {
+            "key": settings.YOUTUBE_API_KEY,
+            "part": "statistics,snippet,player",
+            "id": video_id,
+            "maxResults": 1,
+        }
+        response = self.send_request(url, params=params)
+
+        if response:
+            prepared_video_detail = self.prepare_data(response["items"])
+            return prepared_video_detail
+
+    def get_video_url(self, html: str) -> str:
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html, "html.parser")
+        video_url = soup.find("iframe")["src"].strip("/")
+        return video_url
