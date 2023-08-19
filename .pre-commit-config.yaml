@@ -10,7 +10,3 @@ repos:
       - id: check-yaml
       - id: flake8
         exclude: ".vscode/*"
--   repo: https://github.com/psf/black
-    rev: 22.10.0
-    hooks:
-    -   id: black

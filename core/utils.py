@@ -35,7 +35,6 @@ def get_channels_data(username: str) -> str:
 def get_playlists_by_channel_id(channel_id: str) -> List[Dict[str, Any]]:
     result = []
 
-    next_page_token = None
     prev_page_token = None
     total = None
     count = 0
@@ -46,25 +45,33 @@ def get_playlists_by_channel_id(channel_id: str) -> List[Dict[str, Any]]:
             if total and count >= total:
                 break
 
+            pagination = {}
+
+            if prev_page_token:
+                pagination["pageToken"] = prev_page_token
+
             searcher = initiate_list_request(
                 RequestType.PLAYLISTS,
                 part="snippet",
                 channelId=channel_id,
                 maxResults=limit,
-                nextPageToken=next_page_token,
-                prevPageToken=prev_page_token,
+                **pagination
             )
+
             playlists = searcher.execute()
+            prev_page_token = playlists["nextPageToken"] if "nextPageToken" in playlists else None
 
             if not total:
                 total = playlists["pageInfo"]["totalResults"]
 
             prepared_playlists = prepare_data(playlists["items"])
-            result.append(prepared_playlists)
+            result.extend(prepared_playlists)
             count += limit
 
         except Exception as exp:
             return None
+
+    return result
 
 
 def prepare_data(data_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
