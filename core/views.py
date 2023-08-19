@@ -2,7 +2,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 
 from .serializers import ChannelSerializer
-from .utils import get_channels_data
+from .utils import YouTubeService
 
 
 class ChannelSearch(views.APIView):
@@ -16,7 +16,8 @@ class ChannelSearch(views.APIView):
         # prev_page_token = request.query_params.get('prev_page_token', None)
 
         if username:
-            channels_data = get_channels_data(username)
+            service = YouTubeService()
+            channels_data = service.get_channels_data(username)
             if channels_data:
                 serializer = ChannelSerializer(channels_data, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
