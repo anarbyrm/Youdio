@@ -1,0 +1,7 @@
+[flake8]
+ignore = E402, E127, W503, W504, N802, E731, F401, F841
+exclude = .git, __pycache__, __init__.py, */migrations/*, .vscode/
+max-complexity = 10
+count = true
+max-line-length = 120
+statistics = true

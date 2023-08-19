@@ -1,0 +1,16 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: requirements-txt-fixer
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: flake8
+        exclude: ".vscode/*"
+-   repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+    -   id: black
