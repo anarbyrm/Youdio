@@ -7,7 +7,7 @@ class ChannelSerializer(serializers.Serializer):
     channelId = serializers.CharField()
     title = serializers.CharField()
     description = serializers.CharField()
-    thumbnail = serializers.URLField()
+    thumbnail_url = serializers.URLField()
 
 
 class PlaylistSerializer(serializers.Serializer):
@@ -17,6 +17,6 @@ class PlaylistSerializer(serializers.Serializer):
     channelId = serializers.CharField()
     title = serializers.CharField()
     description = serializers.CharField()
-    thumbnail = serializers.URLField()
+    thumbnail_url = serializers.URLField()
     status = serializers.CharField()
     item_count = serializers.IntegerField()
