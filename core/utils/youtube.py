@@ -5,7 +5,8 @@ from googleapiclient.discovery import build
 from urllib.parse import urljoin
 from requests.sessions import Session
 
-from .constants import SERVICE_NAME, VERSION, YOUTUBE_API_BASE_URL, RequestType
+from core.constants import SERVICE_NAME, VERSION, YOUTUBE_API_BASE_URL, RequestType
+from core.utils.helpers import get_youtube_audio_stream_url
 
 
 class YouTubeService:
@@ -132,7 +133,8 @@ class YouTubeService:
                 })
 
             if player:
-                data["video_url"] = self.get_video_url(player.get("embedHtml"))
+                video_url = self.get_video_url(player.get("embedHtml"))
+                data["audio_stream_url"] = get_youtube_audio_stream_url(video_url)
 
             result.append(data)
 

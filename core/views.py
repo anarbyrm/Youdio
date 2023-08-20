@@ -2,7 +2,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 
 from . import serializers
-from .utils import YouTubeService
+from .utils.youtube import YouTubeService
 
 
 class ChannelSearch(views.APIView):
@@ -57,4 +57,18 @@ class PlaylistVideosView(views.APIView):
                 "items": serializer.data
             }
             return Response(data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class VideoDetailsView(views.APIView):
+    """
+    Returns the video but with its audio streaming link.
+    """
+    def get(self, request, video_id, *args, **kwargs):
+        service = YouTubeService()
+        video_list = service.get_video_detail(video_id)
+        if video_list:
+            video = video_list[0]
+            serializer = serializers.VideoSerializer(video)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_404_NOT_FOUND)
