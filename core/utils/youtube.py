@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 from typing import Any, Dict, List
 
 from django.conf import settings
@@ -160,14 +161,11 @@ class YouTubeService:
             "maxResults": 1,
         }
         response = self.send_request(url, params=params)
-
         if response:
             prepared_video_detail = self.prepare_data(response["items"])
             return prepared_video_detail
 
     def get_video_url(self, html: str) -> str:
-        from bs4 import BeautifulSoup
-
         soup = BeautifulSoup(html, "html.parser")
         video_url = soup.find("iframe")["src"].strip("/")
         return video_url

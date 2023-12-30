@@ -8,20 +8,21 @@ from .utils.youtube import YouTubeService
 class ChannelSearch(views.APIView):
     """
     YouTube channels search by username
+    returns only 10 most relevant results
     """
 
     def get(self, request, *args, **kwargs):
-        username = request.query_params.get("username", None)
+        username = request.query_params.get("username")
 
-        if username is not None:
+        if username:
             service = YouTubeService()
             channels_data = service.get_channels_data(username)
             if channels_data:
                 serializer = serializers.ChannelSerializer(channels_data, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response({"data": serializer.data})
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response({"data": []})
 
 
 class ChannelPlaylistsView(views.APIView):
@@ -38,8 +39,8 @@ class ChannelPlaylistsView(views.APIView):
                 "total": len(playlists),
                 "items": serializer.data
             }
-            return Response(data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(data)
+        return Response({"data": []})
 
 
 class PlaylistVideosView(views.APIView):
@@ -56,19 +57,20 @@ class PlaylistVideosView(views.APIView):
                 "total": len(videos),
                 "items": serializer.data
             }
-            return Response(data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(data)
+        return Response({"data": []})
 
 
 class VideoDetailsView(views.APIView):
     """
-    Returns the video but with its audio streaming link.
+    Returns the video with its audio streaming link.
     """
+
     def get(self, request, video_id, *args, **kwargs):
         service = YouTubeService()
         video_list = service.get_video_detail(video_id)
         if video_list:
             video = video_list[0]
             serializer = serializers.VideoSerializer(video)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({"video": serializer.data})
         return Response(status=status.HTTP_404_NOT_FOUND)
