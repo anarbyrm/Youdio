@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 from typing import Any, Dict, List
 
 from django.conf import settings
@@ -7,7 +6,7 @@ from urllib.parse import urljoin
 from requests.sessions import Session
 
 from core.constants import SERVICE_NAME, VERSION, YOUTUBE_API_BASE_URL, RequestType
-from core.utils.helpers import get_youtube_audio_stream_url
+from core.utils.helpers import get_video_url_from_youtube_page, get_youtube_audio_stream_url
 
 
 class YouTubeService:
@@ -24,6 +23,8 @@ class YouTubeService:
         )
         if response.status_code == 200:
             return response.json()
+        else:
+            raise response.raise_for_status()
 
     def initiate_list_request(self, request_type: RequestType, **kwargs) -> Any:
         youtube = build(SERVICE_NAME, VERSION, developerKey=settings.YOUTUBE_API_KEY)
@@ -37,19 +38,16 @@ class YouTubeService:
         return request.list(**kwargs)
 
     def get_channels_data(self, username: str) -> str:
-        try:
-            searcher = self.initiate_list_request(
-                RequestType.SEARCH,
-                part="snippet",
-                type="channel",
-                maxResults=10,
-                q=username,
-            )
-            channels_data = searcher.execute()
-            prepared_channels = self.prepare_data(channels_data["items"])
-            return prepared_channels
-        except Exception as exp:
-            return None
+        searcher = self.initiate_list_request(
+            RequestType.SEARCH,
+            part="snippet",
+            type="channel",
+            maxResults=10,
+            q=username,
+        )
+        channels_data = searcher.execute()
+        prepared_channels = self.prepare_data(channels_data["items"])
+        return prepared_channels
 
     def get_playlists_by_channel_id(self, channel_id: str) -> List[Dict[str, Any]]:
         result = []
@@ -107,10 +105,6 @@ class YouTubeService:
             player = data.pop("player", None)
 
             # dictionary modification
-            default_audio_language = snippet.pop("defaultAudioLanguage", None)
-            if default_audio_language:
-                data["default_audio_language"] = default_audio_language
-
             data.update(snippet)
             data["thumbnail_url"] = thumbnail["url"]
 
@@ -134,7 +128,7 @@ class YouTubeService:
                 })
 
             if player:
-                video_url = self.get_video_url(player.get("embedHtml"))
+                video_url = get_video_url_from_youtube_page(player["embedHtml"])
                 data["audio_stream_url"] = get_youtube_audio_stream_url(video_url)
 
             result.append(data)
@@ -164,8 +158,3 @@ class YouTubeService:
         if response:
             prepared_video_detail = self.prepare_data(response["items"])
             return prepared_video_detail
-
-    def get_video_url(self, html: str) -> str:
-        soup = BeautifulSoup(html, "html.parser")
-        video_url = soup.find("iframe")["src"].strip("/")
-        return video_url

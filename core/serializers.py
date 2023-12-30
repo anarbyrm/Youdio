@@ -33,7 +33,6 @@ class VideoSerializer(serializers.Serializer):
     title = serializers.CharField()
     description = serializers.CharField()
     audio_stream_url = serializers.URLField()
-    default_audio_language = serializers.CharField()
     thumbnail_url = serializers.URLField()
     view_count = serializers.IntegerField()
     like_count = serializers.IntegerField()
